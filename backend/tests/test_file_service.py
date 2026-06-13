@@ -32,3 +32,15 @@ def test_file_service_allows_only_pdf_and_json_files(tmp_path: Path) -> None:
 
     with pytest.raises(AppError, match="INVALID_FILE_NAME"):
         service.resolve_download_path("bad.txt")
+
+
+def test_file_service_default_output_dir_is_stable_across_working_directories(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    service = FileService()
+
+    expected_base_dir = Path(__file__).resolve().parents[1] / "app" / "output"
+    assert service.base_dir == expected_base_dir

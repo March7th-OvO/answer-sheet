@@ -56,6 +56,7 @@ class QuestionLayout:
     y: float | None = None
     width: float | None = None
     height: float | None = None
+    line_count: int = 1
 
 
 @dataclass(slots=True)
@@ -132,8 +133,8 @@ def build_layout(config: PaperConfig, sheet_id: str = "preview") -> LayoutDocume
 
     return LayoutDocument(
         sheet_id=sheet_id,
-        paper_title=config.paper_title,
-        page_size=config.page_size,
+        paper_title=config.paperTitle,
+        page_size=config.pageSize,
         unit="mm",
         coordinate_system="pdf_bottom_left",
         page=page,
@@ -154,12 +155,12 @@ def build_position_marks() -> list[PositionMarkLayout]:
 
 
 def build_choice_section(section: ChoiceSectionConfig, top_offset: float) -> tuple[SectionLayout, float]:
-    capacity = section.questions_per_row * section.questions_per_column
-    if section.question_count > capacity:
+    capacity = section.questionsPerRow * section.questionsPerColumn
+    if section.questionCount > capacity:
         raise AppError("CHOICE_GRID_CAPACITY_EXCEEDED", "选择题数量超过当前选择题网格容量")
 
-    cell_width = CHOICE_NUMBER_WIDTH_MM + (section.option_count * CHOICE_OPTION_SPACING_MM)
-    total_width = (section.questions_per_row * cell_width) + ((section.questions_per_row - 1) * CHOICE_CELL_GAP_MM)
+    cell_width = CHOICE_NUMBER_WIDTH_MM + (section.optionCount * CHOICE_OPTION_SPACING_MM)
+    total_width = (section.questionsPerRow * cell_width) + ((section.questionsPerRow - 1) * CHOICE_CELL_GAP_MM)
     if total_width > CONTENT_WIDTH_MM:
         raise AppError(
             "PAGE_WIDTH_EXCEEDED",
@@ -187,15 +188,15 @@ def build_choice_section(section: ChoiceSectionConfig, top_offset: float) -> tup
 
 def build_blank_section(section: BlankSectionConfig, top_offset: float) -> tuple[SectionLayout, float]:
     content_height = (
-        section.question_count * section.lines_per_question * BLANK_LINE_HEIGHT_MM
-        + (section.question_count - 1) * BLANK_QUESTION_GAP_MM
+        section.questionCount * section.linesPerQuestion * BLANK_LINE_HEIGHT_MM
+        + (section.questionCount - 1) * BLANK_QUESTION_GAP_MM
     )
     section_height = SECTION_TITLE_HEIGHT_MM + TITLE_TO_CONTENT_GAP_MM + content_height
     questions: list[QuestionLayout] = []
     question_top = top_offset + SECTION_TITLE_HEIGHT_MM + TITLE_TO_CONTENT_GAP_MM
 
-    for question_no in range(1, section.question_count + 1):
-        line_height = section.lines_per_question * BLANK_LINE_HEIGHT_MM
+    for question_no in range(1, section.questionCount + 1):
+        line_height = section.linesPerQuestion * BLANK_LINE_HEIGHT_MM
         y = page_y_from_top(question_top + line_height)
         questions.append(
             QuestionLayout(
@@ -205,6 +206,7 @@ def build_blank_section(section: BlankSectionConfig, top_offset: float) -> tuple
                 y=y,
                 width=CONTENT_RIGHT_MM - CONTENT_LEFT_MM,
                 height=line_height,
+                line_count=section.linesPerQuestion,
             )
         )
         question_top += line_height + BLANK_QUESTION_GAP_MM
@@ -224,24 +226,24 @@ def build_blank_section(section: BlankSectionConfig, top_offset: float) -> tuple
 
 
 def build_calculation_section(section: CalculationSectionConfig, top_offset: float) -> tuple[SectionLayout, float]:
-    question_block_height = CALCULATION_NUMBER_HEIGHT_MM + section.height_per_question
-    content_height = (section.question_count * question_block_height) + (
-        (section.question_count - 1) * CALCULATION_QUESTION_GAP_MM
+    question_block_height = CALCULATION_NUMBER_HEIGHT_MM + section.heightPerQuestion
+    content_height = (section.questionCount * question_block_height) + (
+        (section.questionCount - 1) * CALCULATION_QUESTION_GAP_MM
     )
     section_height = SECTION_TITLE_HEIGHT_MM + TITLE_TO_CONTENT_GAP_MM + content_height
     questions: list[QuestionLayout] = []
     question_top = top_offset + SECTION_TITLE_HEIGHT_MM + TITLE_TO_CONTENT_GAP_MM
 
-    for question_no in range(1, section.question_count + 1):
+    for question_no in range(1, section.questionCount + 1):
         answer_top = question_top + CALCULATION_NUMBER_HEIGHT_MM
         questions.append(
             QuestionLayout(
                 question_no=question_no,
                 type=section.type,
                 x=CONTENT_LEFT_MM,
-                y=page_y_from_top(answer_top + section.height_per_question),
+                y=page_y_from_top(answer_top + section.heightPerQuestion),
                 width=CONTENT_RIGHT_MM - CONTENT_LEFT_MM,
-                height=section.height_per_question,
+                height=section.heightPerQuestion,
             )
         )
         question_top += question_block_height + CALCULATION_QUESTION_GAP_MM
@@ -267,7 +269,7 @@ def build_choice_questions(
 ) -> list[QuestionLayout]:
     questions: list[QuestionLayout] = []
 
-    for question_no in range(1, section.question_count + 1):
+    for question_no in range(1, section.questionCount + 1):
         row_index, column_index = compute_choice_position(question_no, section)
         center_y = page_y_from_top(content_top + (row_index * CHOICE_ROW_HEIGHT_MM) + (CHOICE_ROW_HEIGHT_MM / 2))
         base_x = CONTENT_LEFT_MM + (column_index * (cell_width + CHOICE_CELL_GAP_MM)) + CHOICE_NUMBER_WIDTH_MM + 4
@@ -280,27 +282,35 @@ def build_choice_questions(
             )
             for option_index, option in enumerate(section.options)
         ]
-        questions.append(QuestionLayout(question_no=question_no, type=section.type, options=options))
+        questions.append(
+            QuestionLayout(
+                question_no=question_no,
+                type=section.type,
+                options=options,
+                x=CONTENT_LEFT_MM + (column_index * (cell_width + CHOICE_CELL_GAP_MM)),
+                y=center_y,
+            )
+        )
 
     return questions
 
 
 def compute_choice_position(question_no: int, section: ChoiceSectionConfig) -> tuple[int, int]:
     index = question_no - 1
-    if section.fill_order == "column_first":
-        row_index = index % section.questions_per_column
-        column_index = index // section.questions_per_column
+    if section.fillOrder == "column_first":
+        row_index = index % section.questionsPerColumn
+        column_index = index // section.questionsPerColumn
         return row_index, column_index
 
-    row_index = index // section.questions_per_row
-    column_index = index % section.questions_per_row
+    row_index = index // section.questionsPerRow
+    column_index = index % section.questionsPerRow
     return row_index, column_index
 
 
 def compute_used_choice_rows(section: ChoiceSectionConfig) -> int:
-    if section.fill_order == "column_first":
-        return min(section.questions_per_column, section.question_count)
-    return ceil(section.question_count / section.questions_per_row)
+    if section.fillOrder == "column_first":
+        return min(section.questionsPerColumn, section.questionCount)
+    return ceil(section.questionCount / section.questionsPerRow)
 
 
 def page_y_from_top(top_value: float) -> float:

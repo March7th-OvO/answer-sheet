@@ -8,8 +8,8 @@ from reportlab.pdfbase.ttfonts import TTFont
 from app.core.errors import AppError
 
 
-DEFAULT_FONT_PATH = Path("backend/assets/fonts/NotoSansCJKsc-Regular.otf")
-DEFAULT_FONT_NAME = "NotoSansCJKsc"
+DEFAULT_FONT_PATH = Path(__file__).resolve().parents[2] / "assets" / "fonts" / "NotoSansSC-Regular.ttf"
+DEFAULT_FONT_NAME = "NotoSansSC"
 FALLBACK_FONT_NAME = "Helvetica"
 
 

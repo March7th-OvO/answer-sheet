@@ -18,6 +18,7 @@ test("renders default form sections and generate action", () => {
 
   expect(screen.getByText("答题卡生成器")).toBeInTheDocument();
   expect(screen.getByLabelText("答题卡标题")).toBeInTheDocument();
+  expect(screen.getByDisplayValue("A4")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "生成答题卡" })).toBeInTheDocument();
   expect(screen.getByText("结果下载")).toBeInTheDocument();
 });
@@ -57,6 +58,17 @@ test("shows backend message after failed submission", async () => {
   await waitFor(() => {
     expect(screen.getByText("答题卡内容超出 A4 单页可用高度")).toBeInTheDocument();
   });
+});
+
+test("blocks submit when required basic info is missing", async () => {
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.clear(screen.getByLabelText("答题卡标题"));
+  await user.click(screen.getByRole("button", { name: "生成答题卡" }));
+
+  expect(screen.getByText("答题卡标题不能为空")).toBeInTheDocument();
+  expect(generateAnswerSheet).not.toHaveBeenCalled();
 });
 
 test("submits edited sections from the form", async () => {

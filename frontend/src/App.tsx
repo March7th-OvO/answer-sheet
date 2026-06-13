@@ -54,6 +54,19 @@ function App() {
   };
 
   const handleSubmit = async () => {
+    const studentFields = studentFieldsText
+      .split(",")
+      .map((field) => field.trim())
+      .filter(Boolean);
+
+    const validationMessage = validatePayload(paperTitle, studentFields, sections);
+    if (validationMessage) {
+      setError(validationMessage);
+      setPdfUrl("");
+      setLayoutJsonUrl("");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setPdfUrl("");
@@ -63,10 +76,7 @@ function App() {
       paperTitle,
       examName,
       pageSize: "A4",
-      studentFields: studentFieldsText
-        .split(",")
-        .map((field) => field.trim())
-        .filter(Boolean),
+      studentFields,
       showPositionMarks,
       sections,
     };
@@ -156,4 +166,15 @@ function getSectionTitlePrefix(type: AnswerSheetSection["type"]): string {
   if (type === "choice") return "选择题";
   if (type === "blank") return "填空题";
   return "计算题";
+}
+
+function validatePayload(
+  paperTitle: string,
+  studentFields: string[],
+  sections: AnswerSheetSection[],
+): string | null {
+  if (!paperTitle.trim()) return "答题卡标题不能为空";
+  if (studentFields.length === 0) return "至少保留一个学生字段";
+  if (sections.length === 0) return "至少保留一个题型分区";
+  return null;
 }
