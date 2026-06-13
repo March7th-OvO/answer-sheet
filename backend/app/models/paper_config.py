@@ -1,60 +1,73 @@
 from typing import Annotated, Literal, Union
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import BaseModel, Field, StringConstraints, field_validator, model_validator
 
 
 NonEmptyString = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
 class ChoiceSectionConfig(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
     type: Literal["choice"]
     title: NonEmptyString
-    question_count: int = Field(alias="questionCount", gt=0)
-    option_count: int = Field(alias="optionCount", ge=2)
+    questionCount: int = Field(gt=0)
+    optionCount: int = Field(ge=2)
     options: list[NonEmptyString]
-    questions_per_row: int = Field(alias="questionsPerRow", gt=0)
-    questions_per_column: int = Field(alias="questionsPerColumn", gt=0)
-    fill_order: Literal["row_first", "column_first"] = Field(alias="fillOrder")
+    questionsPerRow: int = Field(gt=0)
+    questionsPerColumn: int = Field(gt=0)
+    fillOrder: Literal["row_first", "column_first"]
 
     @model_validator(mode="after")
     def validate_options(self) -> "ChoiceSectionConfig":
-        if len(self.options) != self.option_count:
+        if len(self.options) != self.optionCount:
             raise ValueError("optionCount must equal options length")
         return self
 
 
 class BlankSectionConfig(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
     type: Literal["blank"]
     title: NonEmptyString
-    question_count: int = Field(alias="questionCount", gt=0)
-    lines_per_question: int = Field(alias="linesPerQuestion", gt=0)
+    questionCount: int = Field(gt=0)
+    linesPerQuestion: int = Field(gt=0)
 
 
 class CalculationSectionConfig(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
     type: Literal["calculation"]
     title: NonEmptyString
-    question_count: int = Field(alias="questionCount", gt=0)
-    height_per_question: float = Field(alias="heightPerQuestion", gt=0)
+    questionCount: int = Field(gt=0)
+    heightPerQuestion: float = Field(gt=0)
 
 
-SectionConfig = Annotated[
-    Union[ChoiceSectionConfig, BlankSectionConfig, CalculationSectionConfig],
-    Field(discriminator="type"),
-]
+SectionConfig = Union[ChoiceSectionConfig, BlankSectionConfig, CalculationSectionConfig]
 
 
 class PaperConfig(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    paperTitle: NonEmptyString
+    examName: str = ""
+    pageSize: Literal["A4"]
+    studentFields: list[NonEmptyString] = Field(min_length=1)
+    showPositionMarks: bool = True
+    sections: list[SectionConfig] = Field(min_length=1)
 
-    paper_title: Annotated[NonEmptyString, Field(alias="paperTitle")]
-    exam_name: Annotated[str, Field(alias="examName")] = ""
-    page_size: Annotated[Literal["A4"], Field(alias="pageSize")]
-    student_fields: Annotated[list[NonEmptyString], Field(alias="studentFields", min_length=1)]
-    show_position_marks: Annotated[bool, Field(alias="showPositionMarks")] = True
-    sections: Annotated[list[SectionConfig], Field(min_length=1)]
+    @field_validator("sections", mode="before")
+    @classmethod
+    def parse_sections(cls, value):
+        if not isinstance(value, list):
+            return value
+
+        parsed_sections = []
+        for item in value:
+            if not isinstance(item, dict):
+                parsed_sections.append(item)
+                continue
+
+            section_type = item.get("type")
+            if section_type == "choice":
+                parsed_sections.append(ChoiceSectionConfig.model_validate(item))
+            elif section_type == "blank":
+                parsed_sections.append(BlankSectionConfig.model_validate(item))
+            elif section_type == "calculation":
+                parsed_sections.append(CalculationSectionConfig.model_validate(item))
+            else:
+                parsed_sections.append(item)
+
+        return parsed_sections

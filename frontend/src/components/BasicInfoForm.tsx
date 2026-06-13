@@ -33,6 +33,10 @@ export function BasicInfoForm({
         <input value={examName} onChange={handleInputChange("examName")} />
       </label>
       <label>
+        <span>纸张规格</span>
+        <input value="A4" readOnly />
+      </label>
+      <label>
         <span>学生字段</span>
         <input value={studentFieldsText} onChange={handleInputChange("studentFieldsText")} />
       </label>

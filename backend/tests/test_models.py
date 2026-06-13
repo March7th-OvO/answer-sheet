@@ -29,7 +29,7 @@ def build_valid_payload() -> dict:
 def test_paper_config_accepts_valid_payload() -> None:
     config = PaperConfig.model_validate(build_valid_payload())
 
-    assert config.page_size == "A4"
+    assert config.pageSize == "A4"
     assert len(config.sections) == 1
 
 

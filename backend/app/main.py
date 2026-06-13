@@ -53,4 +53,16 @@ async def handle_request_validation_error(_: Request, exc: RequestValidationErro
     )
 
 
+@app.exception_handler(Exception)
+async def handle_unexpected_error(_: Request, __: Exception) -> JSONResponse:
+    return JSONResponse(
+        {
+            "success": False,
+            "errorCode": "INTERNAL_ERROR",
+            "message": "服务内部错误，请稍后重试",
+        },
+        status_code=500,
+    )
+
+
 app.include_router(answer_sheet_router)

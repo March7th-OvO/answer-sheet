@@ -1,8 +1,16 @@
+from collections.abc import Sequence
+from typing import Any
+
 from fastapi.exceptions import RequestValidationError
+from pydantic import ValidationError
 
 
-def map_request_validation_error(exc: RequestValidationError) -> tuple[str, str]:
-    for error in exc.errors():
+def map_request_validation_error(exc: RequestValidationError | ValidationError) -> tuple[str, str]:
+    return map_validation_errors(exc.errors())
+
+
+def map_validation_errors(errors: Sequence[dict[str, Any]]) -> tuple[str, str]:
+    for error in errors:
         location = tuple(str(part) for part in error.get("loc", ()))
         message = error.get("msg", "")
 

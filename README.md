@@ -5,9 +5,9 @@
 当前阶段已经实现：
 
 1. FastAPI 后端配置接收、布局计算、PDF 生成、`layout.json` 导出、文件下载
-2. React 前端基础配置页面、生成操作、结果下载展示
+2. React 前端可编辑配置页面、生成操作、结果下载展示、基础前端校验
 3. 选择题 / 填空题 / 计算题三类题型
-4. A4 单页容量校验、下载安全校验、基础自动化测试
+4. A4 单页容量校验、下载安全校验、统一错误码响应、基础自动化测试
 
 ## 目录
 
@@ -50,18 +50,29 @@ http://127.0.0.1:5173
 
 ## 中文字体配置
 
-如果你要生成包含中文标题、中文考试名称或中文学生字段的 PDF，需要在下面目录放入一个可用中文字体文件：
+仓库内已经默认附带一个可用中文字体文件，路径如下：
 
 ```text
-backend/assets/fonts/NotoSansCJKsc-Regular.otf
+backend/assets/fonts/NotoSansSC-Regular.ttf
 ```
 
-当前后端会优先检查这个路径。
+当前后端会优先检查这个路径，并在服务启动时记录字体状态。
 
-如果缺少中文字体：
+如果你需要替换成自己的字体：
+
+1. 将可用的中文 `ttf` 字体放到 `backend/assets/fonts/`
+2. 命名为 `NotoSansSC-Regular.ttf`，或同步修改 `backend/app/services/font_service.py`
+
+如果字体文件被移除：
 
 1. 纯英文配置仍可使用内置字体生成 PDF
 2. 含中文内容时会返回 `FONT_NOT_FOUND`
+
+字体文件采用 SIL Open Font License，许可证文本位于：
+
+```text
+backend/assets/fonts/OFL.txt
+```
 
 ## 测试
 
@@ -75,7 +86,8 @@ pytest backend/tests -q
 
 ```powershell
 cd frontend
-npm run test
+npm run test -- --run
+npm run build
 ```
 
 ## 当前限制

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from fastapi.testclient import TestClient
+import pytest
 
 from app.main import app
 from app.routers import answer_sheet as answer_sheet_router
@@ -130,3 +131,56 @@ def test_download_json_returns_utf8_content_type(tmp_path: Path) -> None:
 
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/json; charset=utf-8"
+
+
+def test_download_rejects_non_pdf_or_json_extensions(tmp_path: Path) -> None:
+    answer_sheet_router.file_service = FileService(base_dir=tmp_path)
+    client = TestClient(app)
+
+    response = client.get("/api/files/sheet_20260613_001.txt")
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "success": False,
+        "errorCode": "INVALID_FILE_NAME",
+        "message": "只允许下载 PDF 或 JSON 文件",
+    }
+
+
+def test_generate_answer_sheet_maps_unexpected_error_to_internal_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    answer_sheet_router.file_service = FileService(base_dir=tmp_path)
+    client = TestClient(app)
+
+    def raise_unexpected_error(*_args, **_kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(answer_sheet_router, "render_pdf", raise_unexpected_error)
+
+    response = client.post(
+        "/api/answer-sheet/generate",
+        json={
+            "paperTitle": "Answer Sheet",
+            "examName": "Final Exam",
+            "pageSize": "A4",
+            "studentFields": ["Name", "Student ID"],
+            "showPositionMarks": True,
+            "sections": [
+                {
+                    "type": "blank",
+                    "title": "Blanks",
+                    "questionCount": 2,
+                    "linesPerQuestion": 1,
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 500
+    assert response.json() == {
+        "success": False,
+        "errorCode": "INTERNAL_ERROR",
+        "message": "服务内部错误，请稍后重试",
+    }
