@@ -7,29 +7,10 @@ import { SectionList } from "./components/SectionList";
 import "./styles.css";
 import type { AnswerSheetPayload, AnswerSheetSection } from "./types/answerSheet";
 
-const defaultSections: AnswerSheetSection[] = [
-  {
-    type: "choice",
-    title: "一、选择题",
-    questionCount: 20,
-    optionCount: 4,
-    options: ["A", "B", "C", "D"],
-    questionsPerRow: 4,
-    questionsPerColumn: 5,
-    fillOrder: "column_first",
-  },
-  {
-    type: "blank",
-    title: "二、填空题",
-    questionCount: 3,
-    linesPerQuestion: 1,
-  },
-  {
-    type: "calculation",
-    title: "三、计算题",
-    questionCount: 2,
-    heightPerQuestion: 25,
-  },
+const DEFAULT_SECTIONS: AnswerSheetSection[] = [
+  createDefaultSection("choice", "一、选择题"),
+  createDefaultSection("blank", "二、填空题"),
+  createDefaultSection("calculation", "三、计算题"),
 ];
 
 function App() {
@@ -37,7 +18,7 @@ function App() {
   const [examName, setExamName] = useState("");
   const [showPositionMarks, setShowPositionMarks] = useState(true);
   const [studentFieldsText, setStudentFieldsText] = useState("姓名,学号,班级");
-  const [sections] = useState<AnswerSheetSection[]>(defaultSections);
+  const [sections, setSections] = useState<AnswerSheetSection[]>(DEFAULT_SECTIONS);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [pdfUrl, setPdfUrl] = useState("");
@@ -51,6 +32,25 @@ function App() {
     if (field === "examName") setExamName(value as string);
     if (field === "showPositionMarks") setShowPositionMarks(value as boolean);
     if (field === "studentFieldsText") setStudentFieldsText(value as string);
+  };
+
+  const handleSectionChange = (index: number, section: AnswerSheetSection) => {
+    setSections((currentSections) =>
+      currentSections.map((currentSection, currentIndex) => (currentIndex === index ? section : currentSection)),
+    );
+  };
+
+  const handleSectionRemove = (index: number) => {
+    setSections((currentSections) => currentSections.filter((_, currentIndex) => currentIndex !== index));
+  };
+
+  const handleSectionAdd = (type: AnswerSheetSection["type"]) => {
+    const titlePrefix = getSectionTitlePrefix(type);
+    const sectionCount = sections.filter((section) => section.type === type).length;
+    setSections((currentSections) => [
+      ...currentSections,
+      createDefaultSection(type, `${titlePrefix}${sectionCount + 1}`),
+    ]);
   };
 
   const handleSubmit = async () => {
@@ -101,7 +101,12 @@ function App() {
           studentFieldsText={studentFieldsText}
           onFieldChange={handleFieldChange}
         />
-        <SectionList sections={sections} />
+        <SectionList
+          sections={sections}
+          onSectionChange={handleSectionChange}
+          onSectionRemove={handleSectionRemove}
+          onSectionAdd={handleSectionAdd}
+        />
         <section className="panel action-panel">
           <h2>生成操作</h2>
           <button type="button" onClick={handleSubmit} disabled={loading}>
@@ -115,3 +120,40 @@ function App() {
 }
 
 export default App;
+
+function createDefaultSection(type: AnswerSheetSection["type"], title: string): AnswerSheetSection {
+  if (type === "choice") {
+    return {
+      type,
+      title,
+      questionCount: 20,
+      optionCount: 4,
+      options: ["A", "B", "C", "D"],
+      questionsPerRow: 4,
+      questionsPerColumn: 5,
+      fillOrder: "column_first",
+    };
+  }
+
+  if (type === "blank") {
+    return {
+      type,
+      title,
+      questionCount: 3,
+      linesPerQuestion: 1,
+    };
+  }
+
+  return {
+    type,
+    title,
+    questionCount: 2,
+    heightPerQuestion: 25,
+  };
+}
+
+function getSectionTitlePrefix(type: AnswerSheetSection["type"]): string {
+  if (type === "choice") return "选择题";
+  if (type === "blank") return "填空题";
+  return "计算题";
+}

@@ -9,6 +9,13 @@ const client = axios.create({
 export async function generateAnswerSheet(
   payload: AnswerSheetPayload,
 ): Promise<GenerateSuccess | GenerateFailure> {
-  const response = await client.post<GenerateSuccess | GenerateFailure>("/api/answer-sheet/generate", payload);
-  return response.data;
+  try {
+    const response = await client.post<GenerateSuccess | GenerateFailure>("/api/answer-sheet/generate", payload);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError<GenerateFailure>(error) && error.response?.data) {
+      return error.response.data;
+    }
+    throw error;
+  }
 }

@@ -49,7 +49,7 @@ def generate_answer_sheet(config: PaperConfig) -> JSONResponse:
 def download_file(file_name: str):
     try:
         file_path = file_service.resolve_download_path(file_name)
-        media_type = "application/pdf" if file_path.suffix == ".pdf" else "application/json"
+        media_type = "application/pdf" if file_path.suffix == ".pdf" else "application/json; charset=utf-8"
         return FileResponse(file_path, media_type=media_type, filename=file_path.name)
     except AppError as exc:
         return JSONResponse(
