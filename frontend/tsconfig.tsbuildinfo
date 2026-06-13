@@ -1,1 +1,0 @@
-{"root":["./src/app.test.tsx","./src/app.tsx","./src/main.tsx","./src/api/answersheet.ts","./src/components/basicinfoform.tsx","./src/components/resultpanel.tsx","./src/components/sectioneditor.tsx","./src/components/sectionlist.tsx","./src/test/setup.ts","./src/types/answersheet.ts"],"version":"5.9.3"}
