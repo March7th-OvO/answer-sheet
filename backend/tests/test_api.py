@@ -82,3 +82,51 @@ def test_download_rejects_invalid_file_name(tmp_path: Path) -> None:
 
     assert response.status_code == 400
     assert response.json()["errorCode"] == "INVALID_FILE_NAME"
+
+
+def test_generate_answer_sheet_maps_validation_error_to_invalid_request(tmp_path: Path) -> None:
+    answer_sheet_router.file_service = FileService(base_dir=tmp_path)
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/answer-sheet/generate",
+        json={
+            "paperTitle": "测试答题卡",
+            "examName": "选项测试",
+            "pageSize": "A4",
+            "studentFields": ["姓名", "学号"],
+            "showPositionMarks": True,
+            "sections": [
+                {
+                    "type": "choice",
+                    "title": "一、选择题",
+                    "questionCount": 10,
+                    "optionCount": 4,
+                    "options": ["A", "B", "C"],
+                    "questionsPerRow": 2,
+                    "questionsPerColumn": 5,
+                    "fillOrder": "column_first",
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "success": False,
+        "errorCode": "OPTION_COUNT_MISMATCH",
+        "message": "optionCount 必须等于 options.length",
+    }
+
+
+def test_download_json_returns_utf8_content_type(tmp_path: Path) -> None:
+    service = FileService(base_dir=tmp_path)
+    answer_sheet_router.file_service = service
+    task_id = "sheet_20260613_001"
+    service.save_json(task_id, '{"sheetId":"sheet_20260613_001"}'.encode("utf-8"))
+    client = TestClient(app)
+
+    response = client.get(f"/api/files/{task_id}_layout.json")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/json; charset=utf-8"

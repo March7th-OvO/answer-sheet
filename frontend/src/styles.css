@@ -15,7 +15,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -69,11 +70,13 @@ input {
 }
 
 .panel input[type="text"],
-.panel input:not([type]) {
+.panel input:not([type]),
+.panel select {
   width: 100%;
 }
 
-.panel input {
+.panel input,
+.panel select {
   padding: 10px 12px;
   border: 1px solid #d2c1aa;
   border-radius: 10px;
@@ -96,8 +99,37 @@ input {
   background: #f7efe2;
 }
 
+.section-card label:last-child {
+  margin-bottom: 0;
+}
+
 .section-card h3 {
   margin: 0 0 8px;
+}
+
+.section-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.section-card-header h3 {
+  margin-bottom: 0;
+}
+
+.section-field-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
 }
 
 .action-panel {
@@ -106,13 +138,27 @@ input {
   justify-content: space-between;
 }
 
-.action-panel button {
+.action-panel button,
+.secondary-button {
   padding: 14px 18px;
   border: 0;
   border-radius: 999px;
   background: linear-gradient(90deg, #aa5d23, #cf7e36);
   color: #fff;
   font-weight: 700;
+  cursor: pointer;
+}
+
+.secondary-button {
+  padding: 10px 16px;
+}
+
+.ghost-button {
+  padding: 8px 12px;
+  border: 1px solid rgba(139, 69, 19, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.66);
+  color: #8b4513;
   cursor: pointer;
 }
 
