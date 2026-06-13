@@ -1,2 +1,10 @@
 .worktrees/
 docs/
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+backend/app/output/pdf/*.pdf
+backend/app/output/json/*.json
+frontend/node_modules/
+frontend/dist/
